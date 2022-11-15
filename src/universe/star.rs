@@ -1,7 +1,7 @@
 use crate::universe::vec::Vec2;
 
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Star {
     pos: Vec2,
     mov: Vec2
@@ -12,6 +12,9 @@ impl Star {
         return Star { pos: Vec2::new(x, y), mov: Vec2::new(ofx, ofy) };
     }
 
+    pub fn get_pos(&self) -> Vec2 {self.pos}
+    pub fn get_mov(&self) -> Vec2 {self.mov}
+
     pub fn to_sdl_point(&self) -> sdl2::rect::Point {
         self.pos.to_sdl_point()
     }
@@ -21,7 +24,7 @@ impl Star {
     }
 
     pub fn update_attraction(&mut self, s:Star) {
-        self.mov += (s.pos - self.pos).normalize() / (self.pos.distance_2(s.pos) + 1.);
+        self.mov += (s.pos - self.pos).normalize() / ((self.pos.distance_2(s.pos) + 1.));
     }
 
     // pub fn distance(&self, p: Star) -> f32 {

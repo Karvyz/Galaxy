@@ -1,6 +1,8 @@
 extern crate sdl2;
 mod universe;
 
+use std::time::Duration;
+
 use universe::Universe;
 use sdl2::pixels::Color;
 use sdl2::event::Event;
@@ -21,7 +23,7 @@ pub fn main() {
     let mut canvas = window.into_canvas().build().unwrap();
  
     let mut universe = Universe::new();
-    universe.init_stars((WIDTH as f32 / 2., HEIGHT as f32 / 2.), 100.);
+    universe.init_stars((WIDTH as f32 / 2., HEIGHT as f32 / 2.),20.);
 
     let mut event_pump = sdl_context.event_pump().unwrap();
     'running: loop {
@@ -45,6 +47,6 @@ pub fn main() {
         universe.update_attractions();
         universe.update_positions(t.elapsed().as_secs_f32());
         // println!("fps : {}", 1./t.elapsed().as_secs_f32())
-        // ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
+        // ::std::thread::sleep(Duration::new(10, 0));
     }
 }

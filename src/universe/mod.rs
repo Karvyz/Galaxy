@@ -1,9 +1,12 @@
 mod star;
 mod vec;
+mod tree;
 
 use star::Star;
 use rand::random;
 use sdl2::{render::Canvas, video::Window};
+use crate::universe::tree::Tree;
+
 pub struct Universe {
     stars:Vec<Star>
 }
@@ -24,10 +27,18 @@ impl Universe {
                 }
             }
         }
-        println!("{} stars", self.stars.len())
+        // println!("{} stars", self.stars.len())
     }
 
     pub fn update_attractions(&mut self){
+        let mut t = Tree::new(1000.);
+        for star in &self.stars {
+            t.insert(star.clone());
+        }
+        t.update_tree();
+        // t.compute_interactions()
+        // println!("{:#?}", t);
+        // println!("size : {}", t.get_nb_stars());
         for i in 0..self.stars.len() {
             for j in 0..self.stars.len() {
                 if i != j {
