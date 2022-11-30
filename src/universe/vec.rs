@@ -11,6 +11,10 @@ impl Vec2 {
     pub fn new(x:f32, y:f32) -> Self{
         Vec2{x,y}
     }
+	pub fn set_x(&mut self, x:f32) {self.x = x}
+	pub fn set_y(&mut self, y:f32) {self.y = y}
+	pub fn get_x(&self) -> f32 {self.x}
+	pub fn get_y(&self) -> f32 {self.y}
 
 	pub fn distance_2(&self, v:Vec2) -> f32 {
 		f32::powf(v.x - self.x, 2.) + f32::powf(v.y - self.y, 2.)
@@ -35,6 +39,10 @@ impl Vec2 {
 	pub fn to_sdl_point(&self) -> sdl2::rect::Point {
         sdl2::rect::Point::new(self.x as i32, self.y as i32)
     }
+
+	pub fn to_carthesian(&self) -> Self {
+		Vec2 { x: self.x * self.y.cos(), y: self.x * self.y.sin() }
+	}
 }
 impl ops::Add for Vec2 {
 	type Output = Vec2;

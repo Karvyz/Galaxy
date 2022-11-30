@@ -2,52 +2,81 @@ mod star;
 mod vec;
 mod tree;
 
+use std::f32::consts::PI;
+
 use star::Star;
 use rand::random;
 use sdl2::{render::Canvas, video::Window};
 use crate::universe::tree::Tree;
 
+use self::vec::Vec2;
+
 pub struct Universe {
     stars:Vec<Star>
 }
 
+fn gen_gaussian() -> f32 {
+    let mut s = 1.;
+    let mut v1 = 0.;
+    while s >= 1.0 || s == 0. {
+        v1 = 2.0 * random::<f32>() - 1.0;
+        let v2 = 2.0 * random::<f32>() - 1.0;
+        s = v1 * v1 + v2 * v2;
+    } ;
+    s = f32::sqrt((-2.0 * s.log(10.)) / s);
+ 
+    return (v1 * s) * 100.;
+}
+
 impl Universe {
     pub fn new() -> Self {
+        
         Universe{stars:vec![]}
     }
 
-    pub fn init_stars(&mut self, center:(f32,f32), density:f32) {
+    pub fn nb_stars(&self) { println!("stars : {}", self.stars.len())}
+
+
+    pub fn init_stars(&mut self, center:(f32,f32), n_stars:i32) {
         self.stars.clear();
-        let c = vec::Vec2::new(center.0, center.1);
-        for y in 0..1000{
-            for x in 0..1000 {
-                let t = vec::Vec2::new(x as f32, y as f32);
-                if random::<f32>() < density/f32::powf(c.distance(t), 2.) {
-                    self.stars.push(Star::new(x as f32, y as f32, random::<f32>() * 2. - 1.,random::<f32>() * 2. - 1.))
-                }
-            }
+        for _i in 0..n_stars {
+            let polar = Vec2::new(gen_gaussian(), random::<f32>() * PI);
+            let mut carthesian = polar.to_carthesian();
+            carthesian = carthesian.add_x(center.0);
+            carthesian = carthesian.add_y(center.1);
+            let mut mov = polar;
+            let y = mov.get_y() + PI/2.;
+            mov.set_y(if y > 2. * PI {y - 2. * PI} else {y});
+            mov.set_x(0.);
+            self.stars.push(Star::newv(carthesian, mov.to_carthesian()))
         }
-        // println!("{} stars", self.stars.len())
     }
 
-    pub fn update_attractions(&mut self){
+    // pub fn update_attractions_naive(&mut self){
+
+
+    //     for i in 0..self.stars.len() {
+    //         for j in 0..self.stars.len() {
+    //             if i != j {
+    //                 let tmp = self.stars[j];
+    //                 self.stars[i].update_attraction(tmp)
+    //             }
+    //         }
+    //     }
+    // }
+
+    pub fn update_attractions_tree(&mut self) {
         let mut t = Tree::new(1000.);
         for star in &self.stars {
             t.insert(star.clone());
         }
         t.update_tree();
-        // t.compute_interactions()
         // println!("{:#?}", t);
-        // println!("size : {}", t.get_nb_stars());
-        for i in 0..self.stars.len() {
-            for j in 0..self.stars.len() {
-                if i != j {
-                    let tmp = self.stars[j];
-                    self.stars[i].update_attraction(tmp)
-                }
-            }
-        }
+        t.compute_interactions();
+        self.stars.clear();
+        self.stars = t.get_updated_stars();
     }
+
     pub fn update_positions(&mut self, time_step:f32) {
         for star in &mut self.stars {
             star.update_pos(time_step)

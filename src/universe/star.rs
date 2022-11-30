@@ -12,6 +12,10 @@ impl Star {
         return Star { pos: Vec2::new(x, y), mov: Vec2::new(ofx, ofy) };
     }
 
+    pub fn newv(pos:Vec2, mov:Vec2) -> Self{
+        Star { pos, mov }
+    }
+
     pub fn get_pos(&self) -> Vec2 {self.pos}
     pub fn get_mov(&self) -> Vec2 {self.mov}
 
@@ -24,7 +28,18 @@ impl Star {
     }
 
     pub fn update_attraction(&mut self, s:Star) {
-        self.mov += (s.pos - self.pos).normalize() / ((self.pos.distance_2(s.pos) + 1.));
+        self.mov += (s.pos - self.pos).normalize() / ((self.pos.distance_2(s.pos) + 10.));
+    }
+
+    pub fn update_attraction_vec(&mut self, t:(Vec2, f32)) {
+        // println!("self{:?}",self.mov);
+        // println!("othe{:?}",t.0);
+
+        // println!("norm{:?}",(t.0 - self.pos).normalize());
+        // println!("dist{:?}",(self.pos.distance_2(t.0) + 1.));
+        let tmp = ((t.0 - self.pos).normalize() / ((self.pos.distance_2(t.0) + 10.))) * t.1;
+        self.mov += tmp;
+
     }
 
     // pub fn distance(&self, p: Star) -> f32 {

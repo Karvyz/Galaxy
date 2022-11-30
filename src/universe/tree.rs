@@ -60,20 +60,20 @@ impl Tree {
         }
     }
 
-    pub fn get_nb_stars(&self) -> usize {
-        match &self.root {
-            None => {0}
-            Some(node) => {Self::get_nb_stars_r(node)}
-        }
-    }
+    // pub fn get_nb_stars(&self) -> usize {
+    //     match &self.root {
+    //         None => {0}
+    //         Some(node) => {Self::get_nb_stars_r(node)}
+    //     }
+    // }
 
-    fn get_nb_stars_r(node: &Node) -> usize {
-        let mut a = node.stars.len();
-        for child in &node.childs{
-            a += Self::get_nb_stars_r(child);
-        }
-        a
-    }
+    // fn get_nb_stars_r(node: &Node) -> usize {
+    //     let mut a = node.stars.len();
+    //     for child in &node.childs{
+    //         a += Self::get_nb_stars_r(child);
+    //     }
+    //     a
+    // }
 
     pub fn update_tree(&mut self) {
         match &mut self.root {
@@ -86,39 +86,70 @@ impl Tree {
         node.mass += node.stars.len() as f32;
         for star in &node.stars{
             node.cog += star.get_pos();
-            node.mass += 1.;
         }
         for child in &mut node.childs{
             Self::update_tree_r(child);
             node.cog += child.cog * child.mass;
             node.mass += child.mass;
         }
-        node.cog = node.cog / node.mass;
+        if node.mass > 0. {node.cog = node.cog / node.mass};
         (node.mass, node.cog)
     }
 
     pub fn compute_interactions(&mut self) {
+        let data = vec![];
         match &mut self.root {
             None => {}
-            Some(node) => {Self::compute_interaction_1_r(node);}
+            Some(node) => {Self::compute_interaction_r(node, data);}
         }
     }
 
-    fn compute_interaction_1_r(node:&mut Node) {
-        if node.childs.len() > 0 {
-            for i in 0..node.childs.len(){
-                Self::compute_interaction_1_r(&mut node.childs[i])
+    fn compute_interaction_r(node:&mut Node, data:Vec<(Vec2, f32)>){
+        // println!("{:?}", data);
+        if node.childs.len() > 0{
+            for i in 0..node.childs.len() {
+                let mut tmp_data = vec![];
+                for j in 0..node.childs.len() {
+                    if i != j && node.childs[j].mass > 0.{
+                        tmp_data.push((node.childs[j].cog.clone(), node.childs[j].mass))
+                    }
+                }
+                tmp_data.append(&mut data.clone());
+                Self::compute_interaction_r(&mut node.childs[i], tmp_data)
             }
         }
         else {
+            
             for i in 0..node.stars.len() {
+                for t in &data {
+                    node.stars[i].update_attraction_vec(*t);
+                }
                 for j in 0..node.stars.len() {
                     if i != j {
                         let tmp = node.stars[j];
                         node.stars[i].update_attraction(tmp)
                     }
                 }
+
             }
+        }
+    }
+
+    pub fn get_updated_stars(&mut self) -> Vec<Star>{
+        let mut stars = vec![];
+        match &mut self.root {
+            None => {}
+            Some(node) => {Self::get_updated_stars_r(node, &mut stars)}
+        }
+        stars
+    }
+
+    fn get_updated_stars_r(node:&Node, stars:&mut Vec<Star>) {
+        for i in 0..node.childs.len(){
+            Self::get_updated_stars_r(&node.childs[i], stars)
+        }
+        for i in 0..node.stars.len() {
+            stars.push(node.stars[i]);
         }
     }
 }
