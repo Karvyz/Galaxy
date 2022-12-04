@@ -24,10 +24,8 @@ impl Vec2 {
         f32::sqrt(self.distance_2(v))
     }
 
-	pub fn normalize(&mut self) -> Self{
-		self.x /= self.distance(Vec2::new(0., 0.));
-		self.y /= self.distance(Vec2::new(0., 0.));
-		*self
+	pub fn normalize(&self) -> Self{
+		Vec2 { x: self.x / self.distance(Vec2::new(0., 0.)), y: self.y / self.distance(Vec2::new(0., 0.))}
 	}
 
 	pub fn add_x(&self, f:f32) -> Self {Vec2{x:self.x + f, y:self.y}}
@@ -36,12 +34,13 @@ impl Vec2 {
 	pub fn sup_eq(&self, v:Vec2) -> bool {self.x >= v.x && self.y >= v.y}
 	pub fn inf(&self, v:Vec2) -> bool {self.x < v.x && self.y < v.y}
 
-	pub fn to_sdl_point(&self) -> sdl2::rect::Point {
-        sdl2::rect::Point::new(self.x as i32, self.y as i32)
-    }
 
 	pub fn to_carthesian(&self) -> Self {
-		Vec2 { x: self.x * self.y.cos(), y: self.x * self.y.sin() }
+		Vec2 { x: self.x * self.y.to_radians().cos(), y: self.x * self.y.to_radians().sin() }
+	}
+
+	pub fn to_polar(&self) -> Self {
+		Vec2 { x: (self.x * self.x + self.y * self.y).sqrt() , y: (self.y / self.x).tan() }
 	}
 }
 impl ops::Add for Vec2 {

@@ -1,66 +1,122 @@
-extern crate sdl2;
+#![deny(clippy::all)]
+#![forbid(unsafe_code)]
+
+use core::time;
+use std::time::Instant;
+
+use log::error;
+use pixels::{Error, Pixels, SurfaceTexture};
+use winit::dpi::LogicalSize;
+use winit::event::{Event, VirtualKeyCode};
+use winit::event_loop::{ControlFlow, EventLoop};
+use winit::window::WindowBuilder;
+use winit_input_helper::WinitInputHelper;
+
 mod universe;
-
 use universe::Universe;
-use sdl2::pixels::Color;
-use sdl2::event::Event;
-use sdl2::keyboard::Keycode;
 
-static HEIGHT:u32 = 1000;
-static WIDTH:u32 = 1000;
- 
-pub fn main() {
+const WIDTH: u32 = 1000;
+const HEIGHT: u32 = 1000;
 
-    
-    let sdl_context = sdl2::init().unwrap();
-    let video_subsystem = sdl_context.video().unwrap();
- 
-    let window = video_subsystem.window("rust-sdl2 demo", WIDTH, HEIGHT)
-        .position_centered()
-        .build()
-        .unwrap();
- 
-    let mut canvas = window.into_canvas().build().unwrap();
- 
-    let mut universe = Universe::new();
-    universe.init_stars((WIDTH as f32 / 2., HEIGHT as f32 / 2.),100000);
+fn dim_frame(frame:&mut [u8]) {
+    for pixel in frame.chunks_exact_mut(4) {
+        for k in 0..3 {
+            let tmp = pixel[k] as i32 - 10 % 256;
+            pixel[k] = if tmp < 0 {0} else {tmp as u8};
+            // pixel[k] = (pixel[k] - 10) % 255;
+        }
+    }
+}
 
-    let mut event_pump = sdl_context.event_pump().unwrap();
+fn clear_frame(frame:&mut [u8]) {
+    for pixel in frame.chunks_exact_mut(4) {
+        pixel[0] = 0x00; // R
+        pixel[1] = 0x00; // G
+        pixel[2] = 0x00; // B
+        pixel[3] = 0xff; // A
+    } 
+}
 
-    let mut start_time = std::time::Instant::now();
+fn main() -> Result<(), Error> {
+    env_logger::init();
+    let event_loop = EventLoop::new();
+    let mut input = WinitInputHelper::new();
+    let window = {
+        let size = LogicalSize::new(WIDTH as f64, HEIGHT as f64);
+        WindowBuilder::new()
+            .with_title("Galaxy")
+            .with_inner_size(size)
+            .with_min_inner_size(size)
+            .build(&event_loop)
+            .unwrap()
+    };
+
+    let mut pixels = {
+        let window_size = window.inner_size();
+        let surface_texture = SurfaceTexture::new(window_size.width, window_size.height, &window);
+        Pixels::new(WIDTH, HEIGHT, surface_texture)?
+    };
+
+    let mut universe = Universe::init(100000, ((WIDTH/2) as f32, (HEIGHT/2) as f32), 10.);
+
+    let mut timer = std::time::Instant::now();
     let mut frame_counter = 0;
 
-    'running: loop {
-        let t = std::time::Instant::now();
-        canvas.set_draw_color(Color::RGBA(0u8,0u8,0u8,1u8));
-        canvas.clear();
-        for event in event_pump.poll_iter() {
-            match event {
-                Event::Quit {..} |
-                Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
-                    break 'running
-                },
-                _ => {}
-            }
-        }
+    let mut time_left = Instant::now();
+    let mut avg = 0;
+
+    event_loop.run(move |event, _, control_flow| {
         
-        canvas.set_draw_color(Color::RGBA(255, 255, 255, 17));
-        universe.draw_stars(&mut canvas);
+        // Draw the current frame
+        if let Event::RedrawRequested(_) = event {
+            let t = Instant::now();
+            frame_counter += 1;
+            let buffer = pixels.get_frame_mut();
+            // dim_frame(buffer);
+            clear_frame(buffer);
+            universe.draw_stars(buffer,WIDTH,HEIGHT);
+            let refresh_timing = 1./120.;
+            universe.update_attraction_black_hole(refresh_timing);
+            universe.update_attractions_tree(refresh_timing);
+            universe.update_positions(refresh_timing);
+            if pixels
+                .render()
+                .map_err(|e| error!("pixels.render() failed: {}", e))
+                .is_err()
+            {
+                *control_flow = ControlFlow::Exit;
+                return;
+            }
+            time_left = Instant::now();
 
-        canvas.present();
-        universe.update_attractions_tree();
-        // ::std::thread::sleep(Duration::new(1, 0));
-        universe.update_positions(t.elapsed().as_secs_f32());
-        // println!("fps : {}", 1./t.elapsed().as_secs_f32())
-        // ::std::thread::sleep(Duration::new(3, 0));
-
-        frame_counter += 1;
-        if start_time.elapsed().as_secs() > 1 {
-            println!("fps : {}",frame_counter - 1);
-            universe.nb_stars();
-            frame_counter = 0;
-            start_time = std::time::Instant::now();
         }
-        // return;
-    }
+
+        // Handle input events
+        if input.update(&event) {
+            // Close events
+            if input.key_pressed(VirtualKeyCode::Escape) || input.quit() {
+                *control_flow = ControlFlow::Exit;
+                return;
+            }
+
+            // Resize the window
+            if let Some(size) = input.window_resized() {
+                pixels.resize_surface(size.width, size.height);
+            }
+
+            // Update internal state and request a redraw
+            window.request_redraw();
+            avg = avg + time_left.elapsed().as_micros();
+            time_left = Instant::now();
+            if timer.elapsed().as_secs_f32() > 1. {
+                println!("fps : {}", frame_counter);
+                println!("atf : {}", avg/frame_counter);
+                avg = 0;
+                frame_counter = 0;
+                timer = Instant::now();
+            }
+
+        }
+
+    });
 }
