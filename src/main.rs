@@ -3,7 +3,6 @@
 
 use std::time::Instant;
 
-use log::error;
 use pixels::{Error, Pixels, SurfaceTexture};
 use winit::dpi::LogicalSize;
 use winit::event::{Event, VirtualKeyCode};
@@ -37,9 +36,7 @@ fn clear_frame(frame:&mut [u8]) {
 }
 
 fn main() -> Result<(), Error> {
-    println!("{}", 99/100);
 
-    env_logger::init();
     let event_loop = EventLoop::new();
     let mut input = WinitInputHelper::new();
     let window = {
@@ -78,7 +75,7 @@ fn main() -> Result<(), Error> {
             universe.update_positions(refresh_timing);
             if pixels
                 .render()
-                .map_err(|e| error!("pixels.render() failed: {}", e))
+                .map_err(|e| eprintln!("pixels.render() failed: {}", e))
                 .is_err()
             {
                 *control_flow = ControlFlow::Exit;
