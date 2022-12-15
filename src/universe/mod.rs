@@ -1,12 +1,11 @@
 mod star;
-mod vec;
 mod tree;
 
+use glam::Vec2;
 use star::Star;
 use rand::random;
 use crate::universe::tree::Tree;
 
-use self::vec::Vec2;
 
 pub struct Universe {
     nb_stars: usize,
@@ -27,6 +26,10 @@ fn gen_gaussian() -> f32 {
     return (v1 * s * 200.).abs();
 }
 
+fn to_carthesian(v:Vec2) -> Vec2 {
+    Vec2 { x: v.x * v.y.to_radians().cos(), y: v.x * v.y.to_radians().sin() }
+}
+
 impl Universe {
     pub fn init(nb_stars: usize, center:(f32,f32), bh_mass_ratio:f32) -> Self {
         let mut universe = Universe{nb_stars, stars:vec![], bh:Star::new(center.0, center.1, 0., 10., nb_stars as f32 * bh_mass_ratio)};
@@ -39,14 +42,14 @@ impl Universe {
         self.stars.reserve_exact(self.nb_stars);
         for _i in 0..self.nb_stars {
             let polar = Vec2::new(gen_gaussian(), random::<f32>() * 360.);
-            let mut carthesian = polar.to_carthesian();
-            carthesian = carthesian.add_x(self.bh.get_pos().get_x());
-            carthesian = carthesian.add_y(self.bh.get_pos().get_y());
+            let mut carthesian = to_carthesian(polar);
+            carthesian.x += self.bh.get_pos().x;
+            carthesian.y += self.bh.get_pos().y;
             let mut mov = polar;
-            mov.set_y(mov.get_y() + 90.);
+            mov.y = mov.y + 90.;
             // mov.set_y(if y > 2. * PI {y - 2. * PI} else {y});
-            mov.set_x(((self.bh.get_mass() + self.nb_stars as f32/2.) /mov.get_x()).sqrt());
-            self.stars.push(Star::newv(carthesian, mov.to_carthesian(), 1.))
+            mov.x = ((self.bh.get_mass() + self.nb_stars as f32/2.) /mov.x).sqrt();
+            self.stars.push(Star::newv(carthesian, to_carthesian(mov), 1.))
         }
     }
 
@@ -87,8 +90,8 @@ impl Universe {
         let color = [0x60, 0x40, 0x80, 0xFF];
 
         for star in &self.stars {
-            if star.get_pos().get_x() >= 0. && star.get_pos().get_y() >= 0. && star.get_pos().get_x() < width as f32 && star.get_pos().get_y() < height as f32 - 1.{
-                let i = star.get_pos().get_y() as usize * width as usize + star.get_pos().get_x() as usize;
+            if star.get_pos().x >= 0. && star.get_pos().y >= 0. && star.get_pos().x < width as f32 && star.get_pos().y < height as f32 - 1.{
+                let i = star.get_pos().y as usize * width as usize + star.get_pos().x as usize;
                 for k in 0..3 {
                     if i as usize * 4 + k > (4 * width * height) as usize {println!("{:?} , {} , {}",star, i, i as usize)}
 
@@ -98,11 +101,5 @@ impl Universe {
                 }
             }
         }
-        // let i = self.bh.get_pos().get_y() * (width as f32) + self.bh.get_pos().get_x();
-        // for k in 0..3 {
-        //     let mut nc = frame[i as usize * 4 + k] as u16;
-        //     nc += color[k];
-        //     frame[i as usize * 4 + k] = if nc > 255 {255} else {nc as u8};
-        // }
     }
 }

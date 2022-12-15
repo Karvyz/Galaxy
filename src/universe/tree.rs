@@ -1,4 +1,5 @@
-use crate::universe::vec::Vec2;
+use glam::Vec2;
+
 use crate::universe::star::Star;
 
 static DIM:usize = 4;
@@ -35,10 +36,14 @@ impl Tree {
             }
             else {
                 let half = node.size/2.;
+                let x0 = node.pos.x;
+                let x1 = x0 + half;
+                let y0 = node.pos.y;
+                let y1 = y0 + half;
                 node.childs.push(Node::new(node.pos, half));
-                node.childs.push(Node::new(node.pos.add_x(half), half));
-                node.childs.push(Node::new(node.pos.add_y(half), half));
-                node.childs.push(Node::new(node.pos.add_x(half).add_y(half), half));
+                node.childs.push(Node::new(Vec2 { x: x1, y: y0 }, half));
+                node.childs.push(Node::new(Vec2 { x: x0, y: y1 }, half));
+                node.childs.push(Node::new(Vec2 { x: x1, y: y1 }, half));
                 for index in 0..node.stars.len() {
                     Self::childs_insert(node, stars, index)
                 }
@@ -151,7 +156,7 @@ impl Node {
     }
 
     fn is_in(&self, coord:Vec2) -> bool {
-        coord.sup_eq(self.pos) && coord.inf(self.pos + self.size)
+        coord.cmpge(self.pos).all() && coord.cmplt(self.pos + self.size).all()
     }
 }
 
