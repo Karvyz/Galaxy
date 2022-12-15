@@ -38,10 +38,6 @@ impl Vec2 {
 	pub fn to_carthesian(&self) -> Self {
 		Vec2 { x: self.x * self.y.to_radians().cos(), y: self.x * self.y.to_radians().sin() }
 	}
-
-	pub fn to_polar(&self) -> Self {
-		Vec2 { x: (self.x * self.x + self.y * self.y).sqrt() , y: (self.y / self.x).tan() }
-	}
 }
 impl ops::Add for Vec2 {
 	type Output = Vec2;

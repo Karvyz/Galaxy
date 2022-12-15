@@ -2,8 +2,6 @@ mod star;
 mod vec;
 mod tree;
 
-use std::time::Instant;
-
 use star::Star;
 use rand::random;
 use crate::universe::tree::Tree;
@@ -36,9 +34,6 @@ impl Universe {
         universe
     }
 
-    pub fn nb_stars(&self) { println!("stars : {}", self.stars.len())}
-
-
     pub fn init_stars(&mut self) {
         self.stars.clear();
         self.stars.reserve_exact(self.nb_stars);
@@ -61,28 +56,24 @@ impl Universe {
         }
     }
 
-    pub fn update_attractions_naive(&mut self, time_step:f32){
-        for i in 0..self.stars.len() {
-            for j in 0..self.stars.len() {
-                if i != j {
-                    let tmp = self.stars[j];
-                    self.stars[i].update_attraction(tmp, time_step)
-                }
-            }
-        }
-    }
+    // pub fn update_attractions_naive(&mut self, time_step:f32){
+    //     for i in 0..self.stars.len() {
+    //         for j in 0..self.stars.len() {
+    //             if i != j {
+    //                 let tmp = self.stars[j];
+    //                 self.stars[i].update_attraction(tmp, time_step)
+    //             }
+    //         }
+    //     }
+    // }
 
     pub fn update_attractions_tree(&mut self, time_step:f32) {
         let mut t = Tree::new(1000.);
-        for star in &self.stars {
-            t.insert(star.clone());
+        for i in 0..self.stars.len() {
+            t.insert(&self.stars, i);
         }
-        t.update_tree();
-        // println!("{:#?}", t);
-        t.compute_interactions(time_step);
-        self.stars.clear();
-        self.stars.reserve_exact(self.nb_stars);
-        self.stars = t.get_updated_stars();
+        t.update_tree(&self.stars);
+        t.compute_interactions(&mut self.stars, time_step);
     }
 
     pub fn update_positions(&mut self, time_step:f32) {

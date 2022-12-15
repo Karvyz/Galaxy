@@ -1,7 +1,6 @@
 #![deny(clippy::all)]
 #![forbid(unsafe_code)]
 
-use core::time;
 use std::time::Instant;
 
 use log::error;
@@ -18,15 +17,15 @@ use universe::Universe;
 const WIDTH: u32 = 1000;
 const HEIGHT: u32 = 1000;
 
-fn dim_frame(frame:&mut [u8]) {
-    for pixel in frame.chunks_exact_mut(4) {
-        for k in 0..3 {
-            let tmp = pixel[k] as i32 - 10 % 256;
-            pixel[k] = if tmp < 0 {0} else {tmp as u8};
-            // pixel[k] = (pixel[k] - 10) % 255;
-        }
-    }
-}
+// fn dim_frame(frame:&mut [u8]) {
+//     for pixel in frame.chunks_exact_mut(4) {
+//         for k in 0..3 {
+//             let tmp = pixel[k] as i32 - 10 % 256;
+//             pixel[k] = if tmp < 0 {0} else {tmp as u8};
+//             // pixel[k] = (pixel[k] - 10) % 255;
+//         }
+//     }
+// }
 
 fn clear_frame(frame:&mut [u8]) {
     for pixel in frame.chunks_exact_mut(4) {
@@ -38,6 +37,8 @@ fn clear_frame(frame:&mut [u8]) {
 }
 
 fn main() -> Result<(), Error> {
+    println!("{}", 99/100);
+
     env_logger::init();
     let event_loop = EventLoop::new();
     let mut input = WinitInputHelper::new();
@@ -62,14 +63,10 @@ fn main() -> Result<(), Error> {
     let mut timer = std::time::Instant::now();
     let mut frame_counter = 0;
 
-    let mut time_left = Instant::now();
-    let mut avg = 0;
-
     event_loop.run(move |event, _, control_flow| {
         
         // Draw the current frame
         if let Event::RedrawRequested(_) = event {
-            let t = Instant::now();
             frame_counter += 1;
             let buffer = pixels.get_frame_mut();
             // dim_frame(buffer);
@@ -87,8 +84,6 @@ fn main() -> Result<(), Error> {
                 *control_flow = ControlFlow::Exit;
                 return;
             }
-            time_left = Instant::now();
-
         }
 
         // Handle input events
@@ -106,17 +101,12 @@ fn main() -> Result<(), Error> {
 
             // Update internal state and request a redraw
             window.request_redraw();
-            avg = avg + time_left.elapsed().as_micros();
-            time_left = Instant::now();
             if timer.elapsed().as_secs_f32() > 1. {
                 println!("fps : {}", frame_counter);
-                println!("atf : {}", avg/frame_counter);
-                avg = 0;
                 frame_counter = 0;
                 timer = Instant::now();
             }
 
         }
-
     });
 }

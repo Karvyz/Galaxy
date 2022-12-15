@@ -19,9 +19,6 @@ impl Star {
 
     pub fn get_mass(&self) -> f32 {self.mass}
     pub fn get_pos(&self) -> Vec2 {self.pos}
-    pub fn get_mov(&self) -> Vec2 {self.mov}
-
-    pub fn set_mass(&mut self, mass:f32) {self.mass = mass}
 
     pub fn update_pos(&mut self, time_step:f32) {
         self.pos += self.mov * time_step
