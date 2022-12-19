@@ -1,8 +1,10 @@
 #![deny(clippy::all)]
 #![forbid(unsafe_code)]
 
+use std::process::exit;
 use std::time::Instant;
 
+use glam::Vec3;
 use pixels::{Error, Pixels, SurfaceTexture};
 use winit::dpi::LogicalSize;
 use winit::event::{Event, VirtualKeyCode};
@@ -10,8 +12,12 @@ use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 use winit_input_helper::WinitInputHelper;
 
+mod camera;
+use camera::Camera;
 mod universe;
-use universe::Universe;
+use universe::{Universe, to_polar};
+
+use crate::universe::to_carthesian;
 
 const WIDTH: u32 = 1000;
 const HEIGHT: u32 = 1000;
@@ -26,16 +32,12 @@ const HEIGHT: u32 = 1000;
 //     }
 // }
 
-fn clear_frame(frame:&mut [u8]) {
-    for pixel in frame.chunks_exact_mut(4) {
-        pixel[0] = 0x00; // R
-        pixel[1] = 0x00; // G
-        pixel[2] = 0x00; // B
-        pixel[3] = 0xff; // A
-    } 
-}
-
 fn main() -> Result<(), Error> {
+
+    let k = to_polar(&Vec3 { x: 2., y: 3., z: 4. });
+    println!("{:?}", k);
+    let y = to_carthesian(&k);
+    println!("{:?}", y);
 
     let event_loop = EventLoop::new();
     let mut input = WinitInputHelper::new();
@@ -55,7 +57,9 @@ fn main() -> Result<(), Error> {
         Pixels::new(WIDTH, HEIGHT, surface_texture)?
     };
 
-    let mut universe = Universe::init(100000, ((WIDTH/2) as f32, (HEIGHT/2) as f32), 10.);
+    let mut universe = Universe::new();
+    universe.add_galaxy(Vec3::new(0., 0., 0.), 10000, 10.);
+    let mut camera = Camera::default(HEIGHT, WIDTH, universe);
 
     let mut timer = std::time::Instant::now();
     let mut frame_counter = 0;
@@ -67,12 +71,9 @@ fn main() -> Result<(), Error> {
             frame_counter += 1;
             let buffer = pixels.get_frame_mut();
             // dim_frame(buffer);
-            clear_frame(buffer);
-            universe.draw_stars(buffer,WIDTH,HEIGHT);
+            camera.display(buffer);
             let refresh_timing = 1./120.;
-            universe.update_attraction_black_hole(refresh_timing);
-            universe.update_attractions_tree(refresh_timing);
-            universe.update_positions(refresh_timing);
+            camera.update_game(refresh_timing);
             if pixels
                 .render()
                 .map_err(|e| eprintln!("pixels.render() failed: {}", e))
@@ -91,6 +92,8 @@ fn main() -> Result<(), Error> {
                 return;
             }
 
+            game_key_pressed(&mut camera, &input);
+
             // Resize the window
             if let Some(size) = input.window_resized() {
                 pixels.resize_surface(size.width, size.height);
@@ -106,4 +109,71 @@ fn main() -> Result<(), Error> {
 
         }
     });
+}
+
+
+fn game_key_pressed(camera:&mut Camera, input:&WinitInputHelper) {
+
+    // Movement
+    if input.key_held(VirtualKeyCode::Z) {
+        camera.movement(Vec3::NEG_Z);
+    }
+
+    if input.key_held(VirtualKeyCode::S) {
+        camera.movement(Vec3::Z);
+    }
+
+    if input.key_held(VirtualKeyCode::Q) {
+        camera.movement(Vec3::X);
+    }
+
+    if input.key_held(VirtualKeyCode::D) {
+        camera.movement(Vec3::NEG_X);
+    }
+
+    if input.held_shift() {
+        camera.movement(Vec3::NEG_Y);
+    }
+
+    if input.key_held(VirtualKeyCode::Space) {
+        camera.movement(Vec3::Y);
+    }
+
+
+    // Camera rotation
+    if input.key_held(VirtualKeyCode::A) {
+        camera.rotation(Vec3::Z);
+    }
+
+    if input.key_held(VirtualKeyCode::E) {
+        camera.rotation(Vec3::NEG_Z);
+    }
+
+
+    // Fuckup everything
+    if input.key_held(VirtualKeyCode::P) {
+        camera.rotation(Vec3::Y);
+    }
+
+    if input.key_held(VirtualKeyCode::M) {
+        camera.rotation(Vec3::NEG_Y);
+    }
+
+    // Camera direction
+    if input.key_held(VirtualKeyCode::J) {
+        camera.direction(Vec3::NEG_X);
+    }
+
+    if input.key_held(VirtualKeyCode::L) {
+        camera.direction(Vec3::X);
+    }
+
+    if input.key_held(VirtualKeyCode::I) {
+        camera.direction(Vec3::NEG_Y);
+    }
+
+    if input.key_held(VirtualKeyCode::K) {
+        camera.direction(Vec3::Y);
+    }
+
 }
