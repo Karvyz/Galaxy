@@ -27,7 +27,7 @@ impl Camera {
 
     pub fn update_game(&mut self, refresh_timing:f32) {
         self.universe.update_attraction_black_hole(refresh_timing);
-            // universe.update_attractions_tree(refresh_timing);
+        self.universe.update_attractions_tree(refresh_timing);
         self.universe.update_positions(refresh_timing);
     }
 

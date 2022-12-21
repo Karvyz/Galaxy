@@ -2,7 +2,7 @@ use glam::{Vec3};
 
 use crate::universe::star::Star;
 
-static DIM:usize = 4;
+static DIM:usize = 8;
 
 #[derive(Debug)]
 pub struct Tree {
@@ -18,7 +18,7 @@ impl Tree {
     pub fn insert(&mut self, stars:&Vec<Star>, i:usize) {       
         match &mut self.root {
             None => {
-                let mut node = Node::new(Vec3::ZERO, self.size);
+                let mut node = Node::new(Vec3::ZERO - self.size as f32/2., self.size);
                 Self::insert_recursive(&mut node, stars, i);
                 self.root = node.into();
             }
@@ -40,10 +40,16 @@ impl Tree {
                 let x1 = x0 + half;
                 let y0 = node.pos.y;
                 let y1 = y0 + half;
-                node.childs.push(Node::new(node.pos, half));
-                node.childs.push(Node::new(Vec3 { x: x1, y: y0, z:0. }, half));
-                node.childs.push(Node::new(Vec3 { x: x0, y: y1, z:0. }, half));
-                node.childs.push(Node::new(Vec3 { x: x1, y: y1, z:0. }, half));
+                let z0 = node.pos.z;
+                let z1 = z0 + half;
+                node.childs.push(Node::new(Vec3 { x: x0, y: y0, z: z0 }, half));
+                node.childs.push(Node::new(Vec3 { x: x1, y: y0, z: z0 }, half));
+                node.childs.push(Node::new(Vec3 { x: x0, y: y1, z: z0 }, half));
+                node.childs.push(Node::new(Vec3 { x: x1, y: y1, z: z0 }, half));
+                node.childs.push(Node::new(Vec3 { x: x0, y: y0, z: z1 }, half));
+                node.childs.push(Node::new(Vec3 { x: x1, y: y0, z: z1 }, half));
+                node.childs.push(Node::new(Vec3 { x: x0, y: y1, z: z1 }, half));
+                node.childs.push(Node::new(Vec3 { x: x1, y: y1, z: z1 }, half));
                 for index in 0..node.stars.len() {
                     Self::childs_insert(node, stars, index)
                 }
@@ -58,7 +64,7 @@ impl Tree {
             if child.is_in(stars[i].get_pos()) {
                 Self::insert_recursive(child, stars, i);
                 return
-        }
+            }
         }
     }
 

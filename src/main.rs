@@ -57,7 +57,7 @@ fn main() -> Result<(), Error> {
     };
 
     let mut universe = Universe::new();
-    universe.add_galaxy(Vec3::new(0., 0., 0.), 100000, 100.);
+    universe.add_galaxy(Vec3::new(0., 0., 0.), 50000, 0.);
     let mut camera = Camera::default(HEIGHT, WIDTH, universe);
 
     let mut timer = std::time::Instant::now();

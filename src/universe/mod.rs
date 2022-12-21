@@ -77,8 +77,8 @@ impl Universe {
             carthesian.y += position.y;
             let mut mov = polar;
             mov.y = mov.y + 90.;
-            mov.x = ((black_hole.get_mass() + self.nb_stars as f32/2.) /mov.x).sqrt();
-            self.stars.push(Star::new(carthesian, to_carthesian(&mov), 1.))
+            mov.x = ((black_hole.get_mass()) /mov.x).sqrt();
+            self.stars.push(Star::new(carthesian, Vec3::ZERO, 1.))
         }
         self.black_holes.push(black_hole);
     }
@@ -104,7 +104,7 @@ impl Universe {
     // }
 
     pub fn update_attractions_tree(&mut self, time_step:f32) {
-        let mut t = Tree::new(1000.);
+        let mut t = Tree::new(2000.);
         for i in 0..self.stars.len() {
             t.insert(&self.stars, i);
         }
