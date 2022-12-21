@@ -125,10 +125,10 @@ impl Camera {
             if star.pos.z > self.znear {
 
                 let mut projected_coord = Vec2 { x: self.aspect_ratio * scaling_factor * star.get_pos().x, y: scaling_factor * star.get_pos().y};
+                projected_coord /= star.get_pos().z;
 
-                if projected_coord.x > 1. || projected_coord.x < -1. || projected_coord.y > 1. || projected_coord.y < -1. {
+                if projected_coord.x < 1. && projected_coord.x > -1. && projected_coord.y < 1. && projected_coord.y > -1. {
 
-                    projected_coord /= star.get_pos().z;
                     projected_coord = self.to_screen(projected_coord);
                     let i = projected_coord.y as usize * self.width + projected_coord.x as usize;
 
