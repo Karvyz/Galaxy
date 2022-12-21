@@ -2,7 +2,7 @@ use std::f32::consts::PI;
 
 use glam::{Vec3, Vec2};
 
-use crate::universe::{Universe, Star, to_polar, to_carthesian};
+use crate::universe::{Universe, to_polar, to_carthesian};
 
 pub struct Camera {
     fov: f32,
@@ -70,6 +70,20 @@ impl Camera {
                 star.pos.z = z;
             }
         }
+        for star in &mut self.universe.stars {
+            if direction_vector.x != 0. {
+                let x = direction_vector.x.cos() * star.mov.x + (-direction_vector.x.sin() * star.mov.z);
+                let z = direction_vector.x.sin() * star.mov.x + (direction_vector.x.cos() * star.mov.z);
+                star.mov.x = x;
+                star.mov.z = z;
+            }
+            if direction_vector.y != 0. {
+                let y = direction_vector.y.cos() * star.mov.y + (-direction_vector.y.sin() * star.mov.z);
+                let z = direction_vector.y.sin() * star.mov.y + (direction_vector.y.cos() * star.mov.z);
+                star.mov.y = y;
+                star.mov.z = z;
+            }
+        }
         for black_hole in &mut self.universe.black_holes {
             if direction_vector.x != 0. {
                 let x = direction_vector.x.cos() * black_hole.pos.x + (-direction_vector.x.sin() * black_hole.pos.z);
@@ -102,8 +116,8 @@ impl Camera {
 
     fn draw_stars(&self, frame:&mut [u8]) {
 
-        let color = [0xFF, 0xFF, 0xFF, 0xFF];
-        // let color = [0x60, 0x40, 0x80, 0xFF];
+        // let color = [0xFF, 0xFF, 0xFF, 0xFF];
+        let color = [0x60, 0x40, 0x80, 0xFF];
 
         let scaling_factor:f32 = 1./((self.fov/2.).to_radians().tan());
         for star in &self.universe.stars {
@@ -118,7 +132,7 @@ impl Camera {
                     projected_coord = self.to_screen(projected_coord);
                     let i = projected_coord.y as usize * self.width + projected_coord.x as usize;
 
-                    if i < 1000000 {
+                    if i < self.width * self.height {
                         for k in 0..3 {
                             let mut nc = frame[i* 4 + k] as u16;
                             nc += color[k];

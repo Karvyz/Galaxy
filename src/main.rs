@@ -1,7 +1,6 @@
 #![deny(clippy::all)]
 #![forbid(unsafe_code)]
 
-use std::process::exit;
 use std::time::Instant;
 
 use glam::Vec3;
@@ -58,7 +57,7 @@ fn main() -> Result<(), Error> {
     };
 
     let mut universe = Universe::new();
-    universe.add_galaxy(Vec3::new(0., 0., 0.), 10000, 10.);
+    universe.add_galaxy(Vec3::new(0., 0., 0.), 100000, 100.);
     let mut camera = Camera::default(HEIGHT, WIDTH, universe);
 
     let mut timer = std::time::Instant::now();

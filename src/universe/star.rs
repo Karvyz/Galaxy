@@ -5,7 +5,7 @@ use glam::{self, Vec3};
 pub struct Star {
     mass: f32,
     pub pos: Vec3,
-    mov: Vec3
+    pub mov: Vec3
 }
 
 impl Star {
