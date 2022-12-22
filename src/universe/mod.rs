@@ -25,7 +25,7 @@ fn gen_gaussian() -> f32 {
     } ;
     s = f32::sqrt((-2.0 * s.log(10.)) / s);
 
-    return (v1 * s * 200.).abs();
+    return v1 * s;
 }
 
 pub fn to_carthesian(v:&Vec3) -> Vec3 {
@@ -67,18 +67,16 @@ impl Universe {
         Universe{nb_stars:0, stars:vec![], black_holes:vec![]}
     }
 
-    pub fn add_galaxy(&mut self, position:Vec3, nb_stars: usize, bh_mass_ratio:f32) {
-        let black_hole = Star::new(position, Vec3::ZERO, nb_stars as f32 * bh_mass_ratio);
+    pub fn add_galaxy(&mut self, position_center:Vec3, nb_stars: usize, bh_mass_ratio:f32) {
+        let black_hole = Star::new(position_center, Vec3::ZERO, nb_stars as f32 * bh_mass_ratio);
         self.nb_stars += nb_stars;
         for _i in 0..self.nb_stars {
-            let polar = Vec3::new(gen_gaussian(), random::<f32>() * 2.* PI, PI/2.);
-            let mut carthesian = to_carthesian(&polar);
-            carthesian.x += position.x;
-            carthesian.y += position.y;
-            let mut mov = polar;
-            mov.y = mov.y + 90.;
-            mov.x = ((black_hole.get_mass()) /mov.x).sqrt();
-            self.stars.push(Star::new(carthesian, Vec3::ZERO, 1.))
+            let pos_star = Vec3::new(gen_gaussian() * 100., gen_gaussian() * 100., gen_gaussian() * 20.);
+            let mut spherical_pos = to_polar(&pos_star);
+            spherical_pos.z += (90_f32).to_radians();
+            spherical_pos.x = (black_hole.mass/spherical_pos.x).sqrt();
+            let movement = to_carthesian(&spherical_pos);
+            self.stars.push(Star::new(pos_star + position_center, movement, 1.))
         }
         self.black_holes.push(black_hole);
     }
@@ -87,21 +85,9 @@ impl Universe {
         for star in &mut self.stars {
             for black_hole in &self.black_holes {
                 star.update_attraction(black_hole, time_step);
-
             }
         }
     }
-
-    // pub fn update_attractions_naive(&mut self, time_step:f32){
-    //     for i in 0..self.stars.len() {
-    //         for j in 0..self.stars.len() {
-    //             if i != j {
-    //                 let tmp = self.stars[j];
-    //                 self.stars[i].update_attraction(tmp, time_step)
-    //             }
-    //         }
-    //     }
-    // }
 
     pub fn update_attractions_tree(&mut self, time_step:f32) {
         let mut t = Tree::new(2000.);

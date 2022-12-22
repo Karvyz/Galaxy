@@ -17,7 +17,7 @@ pub struct Camera {
 
 impl Camera {
     pub fn default(height:u32, width:u32, universe:Universe) -> Self {
-        Camera { fov: 120., aspect_ratio:1., znear:10., universe, height: height.try_into().unwrap(), width: width.try_into().unwrap() }
+        Camera { fov: 120., aspect_ratio:1., znear:1., universe, height: height.try_into().unwrap(), width: width.try_into().unwrap() }
     }
 
     pub fn display(&self, frame:&mut [u8]) {

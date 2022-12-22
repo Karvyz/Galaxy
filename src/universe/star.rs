@@ -3,7 +3,7 @@ use glam::{self, Vec3};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Star {
-    mass: f32,
+    pub mass: f32,
     pub pos: Vec3,
     pub mov: Vec3
 }

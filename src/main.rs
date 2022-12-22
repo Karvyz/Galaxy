@@ -21,16 +21,6 @@ use crate::universe::to_carthesian;
 const WIDTH: u32 = 1000;
 const HEIGHT: u32 = 1000;
 
-// fn dim_frame(frame:&mut [u8]) {
-//     for pixel in frame.chunks_exact_mut(4) {
-//         for k in 0..3 {
-//             let tmp = pixel[k] as i32 - 10 % 256;
-//             pixel[k] = if tmp < 0 {0} else {tmp as u8};
-//             // pixel[k] = (pixel[k] - 10) % 255;
-//         }
-//     }
-// }
-
 fn main() -> Result<(), Error> {
 
     let k = to_polar(&Vec3 { x: 2., y: 3., z: 4. });
@@ -57,7 +47,7 @@ fn main() -> Result<(), Error> {
     };
 
     let mut universe = Universe::new();
-    universe.add_galaxy(Vec3::new(0., 0., 0.), 50000, 0.);
+    universe.add_galaxy(Vec3::new(0., 0., 0.), 50000, 1.);
     let mut camera = Camera::default(HEIGHT, WIDTH, universe);
 
     let mut timer = std::time::Instant::now();
