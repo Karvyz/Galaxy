@@ -81,10 +81,19 @@ impl Universe {
         self.black_holes.push(black_hole);
     }
 
-    pub fn update_attraction_black_hole(&mut self, time_step:f32) {
+    pub fn update_attractions_black_holes(&mut self, time_step:f32) {
         for star in &mut self.stars {
             for black_hole in &self.black_holes {
                 star.update_attraction(black_hole, time_step);
+            }
+        }
+
+        for i in 0..self.black_holes.len() {
+            for j in 0..self.black_holes.len() {
+                if i != j {
+                    let b = self.black_holes[j];
+                    self.black_holes[i].update_attraction(&b, time_step)
+                }
             }
         }
     }

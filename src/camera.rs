@@ -26,9 +26,13 @@ impl Camera {
     }
 
     pub fn update_game(&mut self, refresh_timing:f32) {
-        self.universe.update_attraction_black_hole(refresh_timing);
+        self.universe.update_attractions_black_holes(refresh_timing);
         self.universe.update_attractions_tree(refresh_timing);
         self.universe.update_positions(refresh_timing);
+    }
+
+    pub fn add_galaxy(&mut self) {
+        self.universe.add_galaxy(Vec3::Z * 100., 50000, 1.);
     }
 
     pub fn movement(&mut self, movment_vector:Vec3) {
@@ -135,7 +139,7 @@ impl Camera {
                     if i < self.width * self.height {
                         for k in 0..3 {
                             let mut nc = frame[i* 4 + k] as u16;
-                            nc += color[k];
+                            nc += ((color[k] as f32 / star.pos.z) * 100.) as u16;
                             frame[i* 4 + k] = if nc > 255 {255} else {nc as u8};
                         }
                     }

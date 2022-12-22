@@ -14,19 +14,12 @@ use winit_input_helper::WinitInputHelper;
 mod camera;
 use camera::Camera;
 mod universe;
-use universe::{Universe, to_polar};
-
-use crate::universe::to_carthesian;
+use universe::Universe;
 
 const WIDTH: u32 = 1000;
 const HEIGHT: u32 = 1000;
 
 fn main() -> Result<(), Error> {
-
-    let k = to_polar(&Vec3 { x: 2., y: 3., z: 4. });
-    println!("{:?}", k);
-    let y = to_carthesian(&k);
-    println!("{:?}", y);
 
     let event_loop = EventLoop::new();
     let mut input = WinitInputHelper::new();
@@ -46,8 +39,7 @@ fn main() -> Result<(), Error> {
         Pixels::new(WIDTH, HEIGHT, surface_texture)?
     };
 
-    let mut universe = Universe::new();
-    universe.add_galaxy(Vec3::new(0., 0., 0.), 50000, 1.);
+    let universe = Universe::new();
     let mut camera = Camera::default(HEIGHT, WIDTH, universe);
 
     let mut timer = std::time::Instant::now();
@@ -163,6 +155,10 @@ fn game_key_pressed(camera:&mut Camera, input:&WinitInputHelper) {
 
     if input.key_held(VirtualKeyCode::K) {
         camera.direction(Vec3::Y);
+    }
+
+    if input.key_pressed(VirtualKeyCode::N) {
+        camera.add_galaxy();
     }
 
 }
