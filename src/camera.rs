@@ -16,8 +16,8 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn default(height:u32, width:u32, universe:Universe) -> Self {
-        Camera { fov: 120., aspect_ratio:1., znear:1., universe, height: height.try_into().unwrap(), width: width.try_into().unwrap() }
+    pub fn default(width:u32, height:u32, universe:Universe) -> Self {
+        Camera { fov: 120., aspect_ratio:height as f32/width as f32, znear:1., universe, height: height as usize, width: width as usize }
     }
 
     pub fn display(&self, frame:&mut [u8]) {
@@ -115,7 +115,10 @@ impl Camera {
     }
 
     fn to_screen(&self, pos:Vec2) -> Vec2 {
-        pos * 500. + 500.
+        Vec2 {
+            x: pos.x * self.width as f32/2. + self.width as f32/2.,
+            y: pos.y * self.height as f32/2. + self.height as f32/2.
+        }
     }
 
     fn draw_stars(&self, frame:&mut [u8]) {

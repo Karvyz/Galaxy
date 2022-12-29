@@ -5,10 +5,9 @@ use std::time::Instant;
 
 use glam::Vec3;
 use pixels::{Error, Pixels, SurfaceTexture};
-use winit::dpi::LogicalSize;
 use winit::event::{Event, VirtualKeyCode};
 use winit::event_loop::{ControlFlow, EventLoop};
-use winit::window::WindowBuilder;
+use winit::window::{WindowBuilder, Fullscreen};
 use winit_input_helper::WinitInputHelper;
 
 mod camera;
@@ -16,37 +15,36 @@ use camera::Camera;
 mod universe;
 use universe::Universe;
 
-const WIDTH: u32 = 1000;
-const HEIGHT: u32 = 1000;
+const WIDTH: u32 = 1920;
+const HEIGHT: u32 = 1200;
 
 fn main() -> Result<(), Error> {
 
     let event_loop = EventLoop::new();
     let mut input = WinitInputHelper::new();
     let window = {
-        let size = LogicalSize::new(WIDTH as f64, HEIGHT as f64);
         WindowBuilder::new()
             .with_title("Galaxy")
-            .with_inner_size(size)
-            .with_min_inner_size(size)
+            .with_fullscreen(Some(Fullscreen::Borderless(None)))
             .build(&event_loop)
             .unwrap()
     };
 
+
     let mut pixels = {
-        let window_size = window.inner_size();
+        let window_size = window.current_monitor().unwrap().size();
         let surface_texture = SurfaceTexture::new(window_size.width, window_size.height, &window);
         Pixels::new(WIDTH, HEIGHT, surface_texture)?
     };
 
     let universe = Universe::new();
-    let mut camera = Camera::default(HEIGHT, WIDTH, universe);
+    let mut camera = Camera::default(WIDTH, HEIGHT, universe);
 
     let mut timer = std::time::Instant::now();
     let mut frame_counter = 0;
 
     event_loop.run(move |event, _, control_flow| {
-        
+
         // Draw the current frame
         if let Event::RedrawRequested(_) = event {
             frame_counter += 1;
