@@ -32,7 +32,7 @@ impl Camera {
     }
 
     pub fn add_galaxy(&mut self) {
-        self.universe.add_galaxy(Vec3::Z * 100., 50000, 1.);
+        self.universe.add_galaxy(Vec3::Z * 100., 200000, 0.1);
     }
 
     pub fn movement(&mut self, movment_vector:Vec3) {

@@ -18,7 +18,7 @@ impl Tree {
     pub fn insert(&mut self, stars:&Vec<Star>, i:usize) {       
         match &mut self.root {
             None => {
-                let mut node = Node::new(Vec3::ZERO - self.size as f32/2., self.size);
+                let mut node = Node::new(Vec3::ZERO - self.size, self.size);
                 Self::insert_recursive(&mut node, stars, i);
                 self.root = node.into();
             }
@@ -30,32 +30,30 @@ impl Tree {
         if node.childs.len() == DIM {
             Self::childs_insert(node, stars, i)
         }
-        else {
-            if node.stars.len() < DIM {
+        else if node.stars.len() < DIM {
                 node.stars.push(i)
             }
-            else {
-                let half = node.size/2.;
-                let x0 = node.pos.x;
-                let x1 = x0 + half;
-                let y0 = node.pos.y;
-                let y1 = y0 + half;
-                let z0 = node.pos.z;
-                let z1 = z0 + half;
-                node.childs.push(Node::new(Vec3 { x: x0, y: y0, z: z0 }, half));
-                node.childs.push(Node::new(Vec3 { x: x1, y: y0, z: z0 }, half));
-                node.childs.push(Node::new(Vec3 { x: x0, y: y1, z: z0 }, half));
-                node.childs.push(Node::new(Vec3 { x: x1, y: y1, z: z0 }, half));
-                node.childs.push(Node::new(Vec3 { x: x0, y: y0, z: z1 }, half));
-                node.childs.push(Node::new(Vec3 { x: x1, y: y0, z: z1 }, half));
-                node.childs.push(Node::new(Vec3 { x: x0, y: y1, z: z1 }, half));
-                node.childs.push(Node::new(Vec3 { x: x1, y: y1, z: z1 }, half));
-                for index in 0..node.stars.len() {
-                    Self::childs_insert(node, stars, index)
-                }
-                node.stars.clear();
-                Self::childs_insert(node, stars, i)
+        else {
+            let half = node.size/2.;
+            let x0 = node.pos.x;
+            let x1 = x0 + half;
+            let y0 = node.pos.y;
+            let y1 = y0 + half;
+            let z0 = node.pos.z;
+            let z1 = z0 + half;
+            node.childs.push(Node::new(Vec3 { x: x0, y: y0, z: z0 }, half));
+            node.childs.push(Node::new(Vec3 { x: x1, y: y0, z: z0 }, half));
+            node.childs.push(Node::new(Vec3 { x: x0, y: y1, z: z0 }, half));
+            node.childs.push(Node::new(Vec3 { x: x1, y: y1, z: z0 }, half));
+            node.childs.push(Node::new(Vec3 { x: x0, y: y0, z: z1 }, half));
+            node.childs.push(Node::new(Vec3 { x: x1, y: y0, z: z1 }, half));
+            node.childs.push(Node::new(Vec3 { x: x0, y: y1, z: z1 }, half));
+            node.childs.push(Node::new(Vec3 { x: x1, y: y1, z: z1 }, half));
+            for index in 0..node.stars.len() {
+                Self::childs_insert(node, stars, index)
             }
+            node.stars.clear();
+            Self::childs_insert(node, stars, i)
         }
     }
 
@@ -100,7 +98,7 @@ impl Tree {
             node.cog += child.cog * child.mass;
             node.mass += child.mass;
         }
-        if node.mass > 0. {node.cog = node.cog / node.mass};
+        if node.mass > 0. {node.cog /= node.mass};
         (node.mass, node.cog)
     }
 
@@ -114,12 +112,12 @@ impl Tree {
 
     fn compute_interaction_r(node:&mut Node, data:Vec<(Vec3, f32)>, stars:&mut Vec<Star>, time_step:f32){
         // println!("{:?}", data);
-        if node.childs.len() > 0{
+        if !node.childs.is_empty(){
             for i in 0..node.childs.len() {
                 let mut tmp_data = vec![];
                 for j in 0..node.childs.len() {
                     if i != j && node.childs[j].mass > 0.{
-                        tmp_data.push((node.childs[j].cog.clone(), node.childs[j].mass))
+                        tmp_data.push((node.childs[j].cog, node.childs[j].mass))
                     }
                 }
                 tmp_data.append(&mut data.clone());
@@ -135,7 +133,7 @@ impl Tree {
                 for j in 0..node.stars.len() {
                     if i != j {
                         let tmp = node.stars[j];
-                        let tmpstar = stars[tmp].clone();
+                        let tmpstar = stars[tmp];
                         stars[node.stars[i]].update_attraction(&tmpstar, time_step)
                     }
                 }

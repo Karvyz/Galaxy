@@ -1,4 +1,3 @@
-#![deny(clippy::all)]
 #![forbid(unsafe_code)]
 
 use std::time::Instant;
@@ -52,7 +51,7 @@ fn main() -> Result<(), Error> {
             camera.update_game(refresh_timing);
             if pixels
                 .render()
-                .map_err(|e| eprintln!("pixels.render() failed: {}", e))
+                .map_err(|e| eprintln!("pixels.render() failed: {e}"))
                 .is_err()
             {
                 *control_flow = ControlFlow::Exit;
@@ -78,7 +77,7 @@ fn main() -> Result<(), Error> {
             // Update internal state and request a redraw
             window.request_redraw();
             if timer.elapsed().as_secs_f32() > 1. {
-                println!("fps : {}", frame_counter);
+                println!("fps : {frame_counter}");
                 frame_counter = 0;
                 timer = Instant::now();
             }

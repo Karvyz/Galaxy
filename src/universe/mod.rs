@@ -25,7 +25,7 @@ fn gen_gaussian() -> f32 {
     } ;
     s = f32::sqrt((-2.0 * s.log(10.)) / s);
 
-    return v1 * s;
+    v1 * s
 }
 
 pub fn to_carthesian(v:&Vec3) -> Vec3 {
@@ -48,17 +48,13 @@ pub fn to_polar(v:&Vec3) -> Vec3 {
         else {f32::NAN},
 
         z: if v.x > 0. { (v.y/v.x).atan()}
-        else {
-            if v.x < 0. {
-                if v.y >= 0. { (v.y/v.x).atan() + PI }
-                else { (v.y/v.x).atan() - PI }
-            }
-            else {
-                if v.y > 0. { PI/2. }
-                else if v.y < 0. { -PI/2. }
-                else { f32::NAN }
-            }
+        else if v.x < 0. {
+            if v.y >= 0. { (v.y/v.x).atan() + PI }
+            else { (v.y/v.x).atan() - PI }
         }
+        else if v.y > 0. { PI/2. }
+        else if v.y < 0. { -PI/2. }
+        else { f32::NAN }
     }
 }   
 
