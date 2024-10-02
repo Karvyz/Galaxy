@@ -1,31 +1,33 @@
 use std::f32::consts::PI;
 
-use glam::{Vec3, Vec2};
+use glam::{Vec2, Vec3};
 
-use crate::universe::{Universe, to_polar, to_carthesian};
+use crate::universe::{to_carthesian, to_polar, Universe};
 
 pub struct Camera {
     fov: f32,
 
-    height:usize,
-    width:usize,
+    height: usize,
+    width: usize,
     aspect_ratio: f32,
-    znear:f32,
+    znear: f32,
 
-    universe: Universe
+    universe: Universe,
 }
 
 impl Camera {
-    pub fn default(width:u32, height:u32, universe:Universe) -> Self {
-        Camera { fov: 120., aspect_ratio:height as f32/width as f32, znear:1., universe, height: height as usize, width: width as usize }
+    pub fn default(width: u32, height: u32, universe: Universe) -> Self {
+        Camera {
+            fov: 120.,
+            aspect_ratio: height as f32 / width as f32,
+            znear: 1.,
+            universe,
+            height: height as usize,
+            width: width as usize,
+        }
     }
 
-    pub fn display(&self, frame:&mut [u8]) {
-        self.clear_frame(frame);
-        self.draw_stars(frame);
-    }
-
-    pub fn update_game(&mut self, refresh_timing:f32) {
+    pub fn update_game(&mut self, refresh_timing: f32) {
         self.universe.update_attractions_black_holes(refresh_timing);
         self.universe.update_attractions_tree(refresh_timing);
         self.universe.update_positions(refresh_timing);
@@ -35,7 +37,7 @@ impl Camera {
         self.universe.add_galaxy(Vec3::Z * 100., 200000, 0.1);
     }
 
-    pub fn movement(&mut self, movment_vector:Vec3) {
+    pub fn movement(&mut self, movment_vector: Vec3) {
         for star in &mut self.universe.stars {
             star.pos += movment_vector;
         }
@@ -44,8 +46,8 @@ impl Camera {
         }
     }
 
-    pub fn rotation(&mut self, roation_vector:Vec3) {
-        let r = roation_vector * PI/180.;
+    pub fn rotation(&mut self, roation_vector: Vec3) {
+        let r = roation_vector * PI / 180.;
         for star in &mut self.universe.stars {
             let mut pos_spherical = to_polar(&star.pos);
             pos_spherical += r;
@@ -58,93 +60,97 @@ impl Camera {
         }
     }
 
-    pub fn direction(&mut self, mut direction_vector:Vec3) {
+    pub fn direction(&mut self, mut direction_vector: Vec3) {
         direction_vector *= 0.01;
         for star in &mut self.universe.stars {
             if direction_vector.x != 0. {
-                let x = direction_vector.x.cos() * star.pos.x + (-direction_vector.x.sin() * star.pos.z);
-                let z = direction_vector.x.sin() * star.pos.x + (direction_vector.x.cos() * star.pos.z);
+                let x = direction_vector.x.cos() * star.pos.x
+                    + (-direction_vector.x.sin() * star.pos.z);
+                let z =
+                    direction_vector.x.sin() * star.pos.x + (direction_vector.x.cos() * star.pos.z);
                 star.pos.x = x;
                 star.pos.z = z;
             }
             if direction_vector.y != 0. {
-                let y = direction_vector.y.cos() * star.pos.y + (-direction_vector.y.sin() * star.pos.z);
-                let z = direction_vector.y.sin() * star.pos.y + (direction_vector.y.cos() * star.pos.z);
+                let y = direction_vector.y.cos() * star.pos.y
+                    + (-direction_vector.y.sin() * star.pos.z);
+                let z =
+                    direction_vector.y.sin() * star.pos.y + (direction_vector.y.cos() * star.pos.z);
                 star.pos.y = y;
                 star.pos.z = z;
             }
         }
         for star in &mut self.universe.stars {
             if direction_vector.x != 0. {
-                let x = direction_vector.x.cos() * star.mov.x + (-direction_vector.x.sin() * star.mov.z);
-                let z = direction_vector.x.sin() * star.mov.x + (direction_vector.x.cos() * star.mov.z);
+                let x = direction_vector.x.cos() * star.mov.x
+                    + (-direction_vector.x.sin() * star.mov.z);
+                let z =
+                    direction_vector.x.sin() * star.mov.x + (direction_vector.x.cos() * star.mov.z);
                 star.mov.x = x;
                 star.mov.z = z;
             }
             if direction_vector.y != 0. {
-                let y = direction_vector.y.cos() * star.mov.y + (-direction_vector.y.sin() * star.mov.z);
-                let z = direction_vector.y.sin() * star.mov.y + (direction_vector.y.cos() * star.mov.z);
+                let y = direction_vector.y.cos() * star.mov.y
+                    + (-direction_vector.y.sin() * star.mov.z);
+                let z =
+                    direction_vector.y.sin() * star.mov.y + (direction_vector.y.cos() * star.mov.z);
                 star.mov.y = y;
                 star.mov.z = z;
             }
         }
         for black_hole in &mut self.universe.black_holes {
             if direction_vector.x != 0. {
-                let x = direction_vector.x.cos() * black_hole.pos.x + (-direction_vector.x.sin() * black_hole.pos.z);
-                let z = direction_vector.x.sin() * black_hole.pos.x + (direction_vector.x.cos() * black_hole.pos.z);
+                let x = direction_vector.x.cos() * black_hole.pos.x
+                    + (-direction_vector.x.sin() * black_hole.pos.z);
+                let z = direction_vector.x.sin() * black_hole.pos.x
+                    + (direction_vector.x.cos() * black_hole.pos.z);
                 black_hole.pos.x = x;
                 black_hole.pos.z = z;
             }
             if direction_vector.y != 0. {
-                let y = direction_vector.y.cos() * black_hole.pos.y + (-direction_vector.y.sin() * black_hole.pos.z);
-                let z = direction_vector.y.sin() * black_hole.pos.y + (direction_vector.y.cos() * black_hole.pos.z);
+                let y = direction_vector.y.cos() * black_hole.pos.y
+                    + (-direction_vector.y.sin() * black_hole.pos.z);
+                let z = direction_vector.y.sin() * black_hole.pos.y
+                    + (direction_vector.y.cos() * black_hole.pos.z);
                 black_hole.pos.y = y;
                 black_hole.pos.z = z;
             }
         }
     }
 
-
-    fn clear_frame(&self, frame:&mut [u8]) {
-        for pixel in frame.chunks_exact_mut(4) {
-            pixel[0] = 0x00; // R
-            pixel[1] = 0x00; // G
-            pixel[2] = 0x00; // B
-            pixel[3] = 0xff; // A
-        } 
-    }
-
-    fn to_screen(&self, pos:Vec2) -> Vec2 {
-        Vec2 {
-            x: pos.x * self.width as f32/2. + self.width as f32/2.,
-            y: pos.y * self.height as f32/2. + self.height as f32/2.
+    pub fn clear_buffer(buffer: &mut Vec<u32>) {
+        for pixel in buffer {
+            *pixel = 0;
         }
     }
 
-    fn draw_stars(&self, frame:&mut [u8]) {
+    fn to_screen(&self, pos: Vec2) -> Vec2 {
+        Vec2 {
+            x: pos.x * self.width as f32 / 2. + self.width as f32 / 2.,
+            y: pos.y * self.height as f32 / 2. + self.height as f32 / 2.,
+        }
+    }
 
-        // let color = [0xFF, 0xFF, 0xFF, 0xFF];
-        let color = [0x60, 0x40, 0x80, 0xFF];
-
-        let scaling_factor:f32 = 1./((self.fov/2.).to_radians().tan());
+    pub fn update_buffer(&self, buffer: &mut [u32]) {
+        let color = 0x604080;
         for star in &self.universe.stars {
-
             if star.pos.z > self.znear {
-
-                let mut projected_coord = Vec2 { x: self.aspect_ratio * scaling_factor * star.get_pos().x, y: scaling_factor * star.get_pos().y};
+                let mut projected_coord = Vec2 {
+                    x: self.aspect_ratio * star.get_pos().x,
+                    y: star.get_pos().y,
+                };
                 projected_coord /= star.get_pos().z;
 
-                if projected_coord.x < 1. && projected_coord.x > -1. && projected_coord.y < 1. && projected_coord.y > -1. {
-
+                if projected_coord.x < 1.
+                    && projected_coord.x > -1.
+                    && projected_coord.y < 1.
+                    && projected_coord.y > -1.
+                {
                     projected_coord = self.to_screen(projected_coord);
                     let i = projected_coord.y as usize * self.width + projected_coord.x as usize;
 
                     if i < self.width * self.height {
-                        for k in 0..3 {
-                            let mut nc = frame[i* 4 + k] as u16;
-                            nc += ((color[k] as f32 / star.pos.z) * 100.) as u16;
-                            frame[i* 4 + k] = if nc > 255 {255} else {nc as u8};
-                        }
+                        buffer[i] += color;
                     }
                 }
             }

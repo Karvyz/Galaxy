@@ -1,158 +1,90 @@
-#![forbid(unsafe_code)]
+mod camera;
+mod universe;
 
 use std::time::Instant;
 
-use glam::Vec3;
-use pixels::{Error, Pixels, SurfaceTexture};
-use winit::event::{Event, VirtualKeyCode};
-use winit::event_loop::{ControlFlow, EventLoop};
-use winit::window::{WindowBuilder, Fullscreen};
-use winit_input_helper::WinitInputHelper;
-
-mod camera;
 use camera::Camera;
-mod universe;
+use glam::Vec3;
+use minifb::{Key, Window, WindowOptions};
 use universe::Universe;
 
-fn main() -> Result<(), Error> {
+const WIDTH: usize = 960;
+const HEIGHT: usize = 600;
+const TARGET_FPS: usize = 1200;
 
-    let event_loop = EventLoop::new();
-    let mut input = WinitInputHelper::new();
-    let window = {
-        WindowBuilder::new()
-            .with_title("Galaxy")
-            .with_fullscreen(Some(Fullscreen::Borderless(None)))
-            .build(&event_loop)
-            .unwrap()
-    };
+fn main() {
+    let mut buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];
 
-    let window_size = window.current_monitor().unwrap().size();
-
-    let mut pixels = {
-        let surface_texture = SurfaceTexture::new(window_size.width, window_size.height, &window);
-        Pixels::new(window_size.width, window_size.height, surface_texture)?
-    };
+    let mut window = Window::new(
+        "Test - ESC to exit",
+        WIDTH,
+        HEIGHT,
+        WindowOptions::default(),
+    )
+    .unwrap();
+    window.set_target_fps(TARGET_FPS);
 
     let universe = Universe::new();
-    let mut camera = Camera::default(window_size.width, window_size.height, universe);
+    let mut camera = Camera::default(WIDTH as u32, HEIGHT as u32, universe);
+    camera.add_galaxy();
 
-    let mut timer = std::time::Instant::now();
-    let mut frame_counter = 0;
+    let mut total_time = 0.0;
+    let mut nb_frames = 0;
 
-    event_loop.run(move |event, _, control_flow| {
+    while window.is_open() && !window.is_key_down(Key::Escape) {
+        let start_time = Instant::now();
+        input_handler(&mut camera, &window);
+        let update_start = Instant::now();
+        camera.update_game(1. / (TARGET_FPS as f32));
+        println!("Update time: {:?}", update_start.elapsed());
+        let print_start = Instant::now();
+        Camera::clear_buffer(&mut buffer);
+        camera.update_buffer(&mut buffer);
+        let window_start = Instant::now();
+        window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
+        println!("Window time: {:?}", window_start.elapsed());
+        println!("Print time: {:?}", print_start.elapsed());
+        let elapsed_time = start_time.elapsed().as_secs_f32();
+        total_time += elapsed_time;
+        println!("FPS: {}", 1. / elapsed_time);
+        nb_frames += 1;
+    }
 
-        // Draw the current frame
-        if let Event::RedrawRequested(_) = event {
-            frame_counter += 1;
-            let buffer = pixels.get_frame_mut();
-            // dim_frame(buffer);
-            camera.display(buffer);
-            let refresh_timing = 1./120.;
-            camera.update_game(refresh_timing);
-            if pixels
-                .render()
-                .map_err(|e| eprintln!("pixels.render() failed: {e}"))
-                .is_err()
-            {
-                *control_flow = ControlFlow::Exit;
-                return;
-            }
-        }
-
-        // Handle input events
-        if input.update(&event) {
-            // Close events
-            if input.key_pressed(VirtualKeyCode::Escape) || input.quit() {
-                *control_flow = ControlFlow::Exit;
-                return;
-            }
-
-            game_key_pressed(&mut camera, &input);
-
-            // Resize the window
-            if let Some(size) = input.window_resized() {
-                pixels.resize_surface(size.width, size.height);
-            }
-
-            // Update internal state and request a redraw
-            window.request_redraw();
-            if timer.elapsed().as_secs_f32() > 1. {
-                println!("fps : {frame_counter}");
-                frame_counter = 0;
-                timer = Instant::now();
-            }
-
-        }
-    });
+    println!("Average FPS: {}", nb_frames as f32 / total_time);
 }
 
-
-fn game_key_pressed(camera:&mut Camera, input:&WinitInputHelper) {
-
-    // Movement
-    if input.key_held(VirtualKeyCode::Z) {
+fn input_handler(camera: &mut Camera, window: &Window) {
+    if window.is_key_down(Key::W) {
         camera.movement(Vec3::NEG_Z);
     }
-
-    if input.key_held(VirtualKeyCode::S) {
+    if window.is_key_down(Key::S) {
         camera.movement(Vec3::Z);
     }
-
-    if input.key_held(VirtualKeyCode::Q) {
+    if window.is_key_down(Key::A) {
         camera.movement(Vec3::X);
     }
-
-    if input.key_held(VirtualKeyCode::D) {
+    if window.is_key_down(Key::D) {
         camera.movement(Vec3::NEG_X);
     }
-
-    if input.held_shift() {
-        camera.movement(Vec3::NEG_Y);
-    }
-
-    if input.key_held(VirtualKeyCode::Space) {
+    if window.is_key_down(Key::Space) {
         camera.movement(Vec3::Y);
     }
-
-
-    // Camera rotation
-    if input.key_held(VirtualKeyCode::A) {
+    if window.is_key_down(Key::LeftShift) {
+        camera.movement(Vec3::NEG_Y);
+    }
+    if window.is_key_down(Key::Apostrophe) {
         camera.rotation(Vec3::Z);
     }
-
-    if input.key_held(VirtualKeyCode::E) {
+    if window.is_key_down(Key::L) {
         camera.rotation(Vec3::NEG_Z);
     }
-
-
-    // Fuckup everything
-    if input.key_held(VirtualKeyCode::P) {
+    if window.is_key_down(Key::P) {
         camera.rotation(Vec3::Y);
     }
-
-    if input.key_held(VirtualKeyCode::M) {
+    if window.is_key_down(Key::M) {
         camera.rotation(Vec3::NEG_Y);
     }
-
-    // Camera direction
-    if input.key_held(VirtualKeyCode::J) {
-        camera.direction(Vec3::NEG_X);
-    }
-
-    if input.key_held(VirtualKeyCode::L) {
-        camera.direction(Vec3::X);
-    }
-
-    if input.key_held(VirtualKeyCode::I) {
-        camera.direction(Vec3::NEG_Y);
-    }
-
-    if input.key_held(VirtualKeyCode::K) {
-        camera.direction(Vec3::Y);
-    }
-
-    if input.key_pressed(VirtualKeyCode::N) {
+    if window.is_key_down(Key::N) {
         camera.add_galaxy();
     }
-
 }
