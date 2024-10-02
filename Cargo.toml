@@ -1,11 +1,17 @@
 [package]
-name = "galaxy"
+name = "omega"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-glam = "0.27.0"
-minifb = "0.26.0"
+criterion = "0.5.1"
+glam = { version = "0.28.0", features = ["fast-math"] }
 rand = "0.8.5"
+softbuffer = "0.4.4"
+winit = { version = "0.30.1", features = ["rwh_05"] }
+
+[[bench]]
+name = "bench_tree"
+harness = false

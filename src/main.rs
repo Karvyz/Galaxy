@@ -1,90 +1,142 @@
+use glam::Vec3A;
+use std::num::NonZeroU32;
+use std::rc::Rc;
+use winit::event::{ElementState, Event, KeyEvent, WindowEvent};
+use winit::event_loop::{ControlFlow, EventLoop};
+use winit::keyboard::{Key, NamedKey};
+use winit::window::Window;
+
+mod window;
+use window::WinitAppBuilder;
+
 mod camera;
+use camera::Camera;
+
 mod universe;
 
-use std::time::Instant;
-
-use camera::Camera;
-use glam::Vec3;
-use minifb::{Key, Window, WindowOptions};
-use universe::Universe;
-
-const WIDTH: usize = 960;
-const HEIGHT: usize = 600;
-const TARGET_FPS: usize = 1200;
-
 fn main() {
-    let mut buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];
+    let event_loop = EventLoop::new().unwrap();
 
-    let mut window = Window::new(
-        "Test - ESC to exit",
-        WIDTH,
-        HEIGHT,
-        WindowOptions::default(),
-    )
-    .unwrap();
-    window.set_target_fps(TARGET_FPS);
-
-    let universe = Universe::new();
-    let mut camera = Camera::default(WIDTH as u32, HEIGHT as u32, universe);
+    let universe = universe::Universe::new();
+    let mut camera = Camera::default(universe);
     camera.add_galaxy();
 
-    let mut total_time = 0.0;
-    let mut nb_frames = 0;
+    let mut timer = std::time::Instant::now();
+    let mut fps = 0;
 
-    while window.is_open() && !window.is_key_down(Key::Escape) {
-        let start_time = Instant::now();
-        input_handler(&mut camera, &window);
-        let update_start = Instant::now();
-        camera.update_game(1. / (TARGET_FPS as f32));
-        println!("Update time: {:?}", update_start.elapsed());
-        let print_start = Instant::now();
-        Camera::clear_buffer(&mut buffer);
-        camera.update_buffer(&mut buffer);
-        let window_start = Instant::now();
-        window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
-        println!("Window time: {:?}", window_start.elapsed());
-        println!("Print time: {:?}", print_start.elapsed());
-        let elapsed_time = start_time.elapsed().as_secs_f32();
-        total_time += elapsed_time;
-        println!("FPS: {}", 1. / elapsed_time);
-        nb_frames += 1;
-    }
+    let mut update_time = 0.;
+    let mut display_time = 0.;
 
-    println!("Average FPS: {}", nb_frames as f32 / total_time);
+    let mut app = WinitAppBuilder::with_init(|elwt| {
+        let window = {
+            let window = elwt.create_window(Window::default_attributes());
+            Rc::new(window.unwrap())
+        };
+        let context = softbuffer::Context::new(window.clone()).unwrap();
+        let surface = softbuffer::Surface::new(&context, window.clone()).unwrap();
+
+        (window, surface)
+    })
+    .with_event_handler(|state, event, elwt| {
+        let (window, surface) = state;
+        elwt.set_control_flow(ControlFlow::Poll);
+
+        match event {
+            Event::WindowEvent {
+                window_id,
+                event: WindowEvent::RedrawRequested,
+            } if window_id == window.id() => {
+                let (width, height) = {
+                    let size = window.inner_size();
+                    (size.width, size.height)
+                };
+                surface
+                    .resize(
+                        NonZeroU32::new(width).unwrap(),
+                        NonZeroU32::new(height).unwrap(),
+                    )
+                    .unwrap();
+                let start = std::time::Instant::now();
+                camera.update_game(1. / 200.);
+                update_time += start.elapsed().as_secs_f32();
+                let start = std::time::Instant::now();
+                let mut buffer = surface.buffer_mut().unwrap();
+                camera.clear_frame(buffer.as_mut());
+                camera.draw_stars(buffer.as_mut(), width, height);
+
+                buffer.present().unwrap();
+                window.request_redraw();
+                display_time += start.elapsed().as_secs_f32();
+
+                fps += 1;
+                if timer.elapsed().as_secs() >= 1 {
+                    println!("FPS: {}", fps);
+                    println!("Update time: {}", update_time * 1000. / fps as f32);
+                    println!("Display time: {}", display_time * 1000. / fps as f32);
+                    fps = 0;
+                    update_time = 0.;
+                    display_time = 0.;
+                    timer = std::time::Instant::now();
+                }
+            }
+            Event::WindowEvent {
+                event: WindowEvent::CloseRequested,
+                window_id,
+            } if window_id == window.id() => {
+                elwt.exit();
+            }
+            Event::WindowEvent {
+                event: WindowEvent::KeyboardInput { event, .. },
+                window_id,
+            } if window_id == window.id() => {
+                handle_key_event(event, window, &mut camera);
+            }
+            _ => {}
+        }
+    });
+
+    event_loop.run_app(&mut app).unwrap();
 }
 
-fn input_handler(camera: &mut Camera, window: &Window) {
-    if window.is_key_down(Key::W) {
-        camera.movement(Vec3::NEG_Z);
-    }
-    if window.is_key_down(Key::S) {
-        camera.movement(Vec3::Z);
-    }
-    if window.is_key_down(Key::A) {
-        camera.movement(Vec3::X);
-    }
-    if window.is_key_down(Key::D) {
-        camera.movement(Vec3::NEG_X);
-    }
-    if window.is_key_down(Key::Space) {
-        camera.movement(Vec3::Y);
-    }
-    if window.is_key_down(Key::LeftShift) {
-        camera.movement(Vec3::NEG_Y);
-    }
-    if window.is_key_down(Key::Apostrophe) {
-        camera.rotation(Vec3::Z);
-    }
-    if window.is_key_down(Key::L) {
-        camera.rotation(Vec3::NEG_Z);
-    }
-    if window.is_key_down(Key::P) {
-        camera.rotation(Vec3::Y);
-    }
-    if window.is_key_down(Key::M) {
-        camera.rotation(Vec3::NEG_Y);
-    }
-    if window.is_key_down(Key::N) {
-        camera.add_galaxy();
+fn handle_key_event(event: KeyEvent, _window: &Window, camera: &mut Camera) {
+    match event {
+        KeyEvent {
+            logical_key: key,
+            state: ElementState::Pressed,
+            ..
+        } => match key.as_ref() {
+            Key::Character("w") => {
+                camera.movement(Vec3A::new(0., 0., -1.));
+            }
+            Key::Character("s") => {
+                camera.movement(Vec3A::new(0., 0., 1.));
+            }
+            Key::Character("a") => {
+                camera.movement(Vec3A::new(1., 0., 0.));
+            }
+            Key::Character("d") => {
+                camera.movement(Vec3A::new(-1., 0., 0.));
+            }
+            Key::Named(NamedKey::Space) => {
+                camera.movement(Vec3A::new(0., 1., 0.));
+            }
+            Key::Named(NamedKey::Shift) => {
+                camera.movement(Vec3A::new(0., -1., 0.));
+            }
+            _ => {}
+        },
+        KeyEvent {
+            logical_key: key,
+            state: ElementState::Released,
+            ..
+        } => match key.as_ref() {
+            Key::Character("w") => {
+                println!("released w")
+            }
+            Key::Character("s") => {
+                println!("released s")
+            }
+            _ => {}
+        },
     }
 }
